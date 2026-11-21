@@ -175,9 +175,57 @@ void applyReplayInputsForPrediction(
 }
 
 
+struct GameStateSnapshot {
+    decltype(GJGameState::m_totalTime) totalTime{};
+    decltype(GJGameState::m_unkDouble3) unkDouble3{};
+    decltype(GJGameState::m_currentProgress) currentProgress{};
+    decltype(GJGameState::m_unkUint5) unkUint5{};
+    decltype(GJGameState::m_timeModRelated) timeModRelated{};
+    decltype(GJGameState::m_timeModRelated2) timeModRelated2{};
+    decltype(GJGameState::m_timeWarp) timeWarp{};
+    decltype(GJGameState::m_isDualMode) isDualMode{};
+    decltype(GJGameState::m_levelTime) levelTime{};
+    decltype(GJGameState::m_commandIndex) commandIndex{};
+    decltype(GJGameState::m_currentChannel) currentChannel{};
+    decltype(GJGameState::m_unkBool31) unkBool31{};
+    decltype(GJGameState::m_cameraZoom) cameraZoom{};
+
+    void capture(GJGameState const& state) {
+        totalTime = state.m_totalTime;
+        unkDouble3 = state.m_unkDouble3;
+        currentProgress = state.m_currentProgress;
+        unkUint5 = state.m_unkUint5;
+        timeModRelated = state.m_timeModRelated;
+        timeModRelated2 = state.m_timeModRelated2;
+        timeWarp = state.m_timeWarp;
+        isDualMode = state.m_isDualMode;
+        levelTime = state.m_levelTime;
+        commandIndex = state.m_commandIndex;
+        currentChannel = state.m_currentChannel;
+        unkBool31 = state.m_unkBool31;
+        cameraZoom = state.m_cameraZoom;
+    }
+
+    void apply(GJGameState& state) const {
+        state.m_totalTime = totalTime;
+        state.m_unkDouble3 = unkDouble3;
+        state.m_currentProgress = currentProgress;
+        state.m_unkUint5 = unkUint5;
+        state.m_timeModRelated = timeModRelated;
+        state.m_timeModRelated2 = timeModRelated2;
+        state.m_timeWarp = timeWarp;
+        state.m_isDualMode = isDualMode;
+        state.m_levelTime = levelTime;
+        state.m_commandIndex = commandIndex;
+        state.m_currentChannel = currentChannel;
+        state.m_unkBool31 = unkBool31;
+        state.m_cameraZoom = cameraZoom;
+    }
+};
+
 struct LayerStateGuard {
     PlayLayer* pl = nullptr;
-    GJGameState gameState;
+    GameStateSnapshot gameState;
     EffectManagerState effectState;
     gd::vector<SavedObjectStateRef> dynamicObjects;
     gd::vector<SavedActiveObjectState> activeObjects;
@@ -196,7 +244,7 @@ struct LayerStateGuard {
         if (!pl)
             return;
 
-        gameState = pl->m_gameState;
+        gameState.capture(pl->m_gameState);
         solidCount = pl->m_solidCollisionObjectsCount;
         hazardCount = pl->m_hazardCollisionObjectsCount;
         pl->saveDynamicSaveObjects(dynamicObjects);
@@ -224,7 +272,7 @@ struct LayerStateGuard {
         ShowTrajectory::restoreSnapshots();
         pl->loadDynamicSaveObjects(dynamicObjects);
         pl->loadActiveSaveObjects(activeObjects, specialObjects);
-        pl->m_gameState = gameState;
+        gameState.apply(pl->m_gameState);
         pl->m_solidCollisionObjectsCount = solidCount;
         pl->m_hazardCollisionObjectsCount = hazardCount;
         pl->m_varianceValues = varianceValues;
