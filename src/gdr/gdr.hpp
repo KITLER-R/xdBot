@@ -52,6 +52,8 @@ struct FrameData {
 };
 
 inline constexpr int kFrameFixVelocityVersion = 2601;
+// Macros recorded by this fork before this version stored player 1 / player 2 swapped on two-player levels.
+inline constexpr int kTwoPlayerInputFixVersion = 2602;
 
 struct FrameFix {
     int frame;
