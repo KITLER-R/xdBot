@@ -290,11 +290,18 @@ class $modify(BGLHook, GJBaseGameLayer) {
 
         m_fields->macroInput = true;
 
+        auto const& macroInfo = bot.replay.botInfo;
+        bool swapPlayers = m_levelSettings && m_levelSettings->m_twoPlayerMode &&
+                           macroInfo.name == "xdBot" && macroInfo.version >= 2600 &&
+                           macroInfo.version < gdr_legacy::kTwoPlayerInputFixVersion;
+
         while (bot.currentAction < bot.replay.inputs.size() &&
                frame >= bot.replay.inputs[bot.currentAction].frame) {
             auto input = bot.replay.inputs[bot.currentAction];
             if (frame != bot.respawnFrame) {
                 input.player2 = !input.player2;
+                if (swapPlayers)
+                    input.player2 = !input.player2;
 
                 m_fields->pendingMacroInputCounts[{input.button, input.down}]++;
                 queueButton(input.button, input.down, input.player2, 0.0);
@@ -392,16 +399,18 @@ class $modify(BGLHook, GJBaseGameLayer) {
 
         GJBaseGameLayer::handleButton(hold, button, player2);
 
-        if (!m_levelSettings->m_twoPlayerMode)
-            player2 = false;
+        // GD passes "isPlayer1" as the 3rd argument of handleButton (despite the parameter name
+        // used here). Bot::recordAction expects the opposite sense, so convert it for two-player
+        // levels; on single-player levels every input belongs to player 1.
+        bool recordPlayer2 = m_levelSettings->m_twoPlayerMode ? !player2 : false;
 
         if (!bot.ignoreRecordAction && !bot.creatingTrajectory && !m_player1->m_isDead) {
-            Bot::recordAction(frame, button, player2, hold);
+            Bot::recordAction(frame, button, recordPlayer2, hold);
 
             if (bot.p2mirror && m_gameState.m_isDualMode)
                 Bot::recordAction(frame,
                                   button,
-                                  !player2,
+                                  !recordPlayer2,
                                   bot.mod->getSavedValue<bool>("p2_input_mirror_inverted") ? !hold
                                                                                           : hold);
         }
